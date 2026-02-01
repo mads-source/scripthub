@@ -6,7 +6,7 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local Folder = Instance.new("Folder")
 Folder.Name = string.gsub(HttpService:GenerateGUID(false), "-", ""):upper()
-Folder.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+Folder.Parent = game:GetService("CoreGui")
 local function CreateSelectionBox(Bodypart)
 	local SelectionBox = Instance.new("SelectionBox")
 	SelectionBox.Adornee = Bodypart
@@ -30,6 +30,72 @@ local function CreateHighlight(Bodypart)
 	Highlight.Parent = Folder
 	return Highlight
 end
+local function UpdateESPColor(Player, Humanoid)
+	local UserId = Player.UserId
+	local Cache = _G.ESP.Characters[UserId]
+	if not Cache then return end
+	local Ratio = Humanoid.Health / Humanoid.MaxHealth
+	Ratio = math.clamp(Ratio, 0, 1)
+	local Full = _G.ESP.Color
+	local Low = Color3.new(1, 0, 0)
+	local Color = Color3.new(
+		Full.R + (Low.R - Full.R) * (1 - Ratio),
+		Full.G + (Low.G - Full.G) * (1 - Ratio),
+		Full.B + (Low.B - Full.B) * (1 - Ratio)
+	)
+	for _, Object in ipairs(Cache) do
+		if Object:IsA("SelectionBox") then
+			Object.Color3 = Color
+			Object.SurfaceColor3 = Color
+		elseif Object:IsA("Highlight") then
+			Object.FillColor = Color
+		elseif Object:IsA("BillboardGui") then
+			local NameLabel = Object:FindFirstChild("Name")
+			local HPLabel = Object:FindFirstChild("HP")
+			if NameLabel then
+				NameLabel.TextColor3 = Color
+			end
+			if HPLabel then
+				HPLabel.TextColor3 = Color
+				HPLabel.Text = math.floor(Humanoid.Health) .. " HP"
+			end
+		end
+	end
+end
+local function CreateNametag(Character, Player)
+	local Head = Character:FindFirstChild("Head")
+	if not Head then
+		return;
+	end
+	local Tag = Instance.new("BillboardGui")
+	Tag.Name = Player.Name.."_Nametag"
+	Tag.Adornee = Head
+	Tag.Size = UDim2.new(0, 120, 0, 40)
+	Tag.StudsOffset = Vector3.new(0, 2.5, 0)
+	Tag.AlwaysOnTop = true
+	Tag.Parent = Folder
+	local Label = Instance.new("TextLabel")
+	Label.Size = UDim2.new(1, 0, 1, 0)
+	Label.BackgroundTransparency = 1
+	Label.Text = Player.Name
+	Label.TextColor3 = _G.ESP.Color
+	Label.TextStrokeTransparency = 0.5
+	Label.TextScaled = true
+	Label.Font = Enum.Font.GothamBold
+	Label.Parent = Tag
+	local HPLabel = Instance.new("TextLabel")
+	HPLabel.Name = "HP"
+	HPLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	HPLabel.Position = UDim2.new(0, 0, 0.5, 0)
+	HPLabel.BackgroundTransparency = 1
+	HPLabel.Text = "100 HP"
+	HPLabel.TextColor3 = _G.ESP.Color
+	HPLabel.TextScaled = true
+	HPLabel.Font = Enum.Font.GothamSemibold
+	HPLabel.TextStrokeTransparency = 0.5
+	HPLabel.Parent = Tag
+	return Tag
+end
 local function CreateESP(Player, Character)
 	local UserId = Player.UserId
 	_G.ESP.Characters[UserId] = _G.ESP.Characters[UserId] or {}
@@ -40,6 +106,9 @@ local function CreateESP(Player, Character)
 				local Split = string.split(v.Name, "-")
 				local BodypartName = Split[1]
 				v.Adornee = Character:FindFirstChild(BodypartName)
+				if v:IsA("BillboardGui") then
+					v.Adornee = Character:FindFirstChild("Head")
+				end
 			end
 		end
 		return
@@ -52,6 +121,10 @@ local function CreateESP(Player, Character)
 				table.insert(Cache, CreateHighlight(Bodypart))
 			end
 		end
+	end
+	local Nametag = CreateNametag(Character, Player)
+	if Nametag then
+		table.insert(Cache, Nametag)
 	end
 end
 local function RemoveESP(Player, Permanent)
@@ -76,6 +149,10 @@ local function SetupPlayer(Player)
 		Character:WaitForChild("Humanoid")
 		task.wait()
 		CreateESP(Player, Character)
+		UpdateESPColor(Player, Character.Humanoid)
+		Character.Humanoid.HealthChanged:Connect(function()
+			UpdateESPColor(Player, Character.Humanoid)
+		end)
 	end)
 	Player.CharacterRemoving:Connect(function(Character)
 		RemoveESP(Player, false)
