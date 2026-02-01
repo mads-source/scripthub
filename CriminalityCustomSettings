@@ -29,11 +29,15 @@ local function BindFunction()
 	end
 	for _, Object in ipairs(CameraObjects) do
 		if Object:IsA("BasePart") then
-			Object.LocalTransparencyModifier = Settings.TransparencyModifier
+			if Object.LocalTransparencyModifier ~= Settings.TransparencyModifier then
+				Object.LocalTransparencyModifier = Settings.TransparencyModifier
+			end
 		elseif Object:IsA("ParticleEmitter") then
 			Object:Clear()
 		elseif Object:IsA("Decal") then
-			Object.Transparency = Settings.TransparencyModifier
+			if Object.Transparency ~= Settings.TransparencyModifier then
+				Object.Transparency = Settings.TransparencyModifier
+			end
  		end
 	end
 end
