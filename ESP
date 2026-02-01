@@ -43,7 +43,6 @@ end
 local function CreateESP(Character)
 	_G.ESP.Characters[GUIFC(Character)] = _G.ESP.Characters[GUIFC(Character)] or {}
 	if _G.ESP.Characters[GUIFC(Character)] and #_G.ESP.Characters[GUIFC(Character)] > 0 then
-		print("cached") -- adornee here to cached selection boxes and highlights
 		for _, v in ipairs(_G.ESP.Characters[GUIFC(Character)]) do
 			local Split = string.split(v.Name, "-")
 			local BodypartName = Split[1]
@@ -64,9 +63,6 @@ local function CreateESP(Character)
 			end
 		end
 	end
-	print(_G.ESP.Characters[Character])
-	-- // DEBUG LINE 
-	warn("ESP CREATED FOR "..tostring(Character.Name))
 end
 local function RemoveESP(Character, Permeanently)
 	if _G.ESP.Characters[GUIFC(Character)] == nil then
@@ -83,10 +79,7 @@ local function RemoveESP(Character, Permeanently)
 	end
 	if Permeanently == true then
 		_G.ESP.Characters[GUIFC(Character)] = nil
-		print(_G.ESP.Characters)
 	end
-	-- // DEBUG LINE 
-	warn("ESP REMOVED FROM "..tostring(Character.Name))
 end
 for _, Player in ipairs(Players:GetPlayers()) do
 	if Player == nil then
