@@ -1,0 +1,138 @@
+_G.ESP = {
+	Characters = {},
+	Color = Color3.fromRGB(255, 255, 255),
+}
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local Folder = Instance.new("Folder")
+Folder.Name = string.gsub(HttpService:GenerateGUID(false), "-", ""):upper()
+Folder.Parent = Players.LocalPlayer.PlayerGui
+local function GUIFC(Character) -- GUIFC / GetUserIdFromCharacter
+	if Character == nil then
+		return;
+	end
+	local Player = Players:GetPlayerFromCharacter(Character)
+	if Player == nil then
+		return;
+	end
+	return Player.UserId
+end
+local function CreateSelectionBox(Bodypart)
+	local SelectionBox = Instance.new("SelectionBox")
+	SelectionBox.Adornee = Bodypart
+	SelectionBox.Name = Bodypart.Name.."-SelectionBox"
+	SelectionBox.Color3 = _G.ESP.Color
+	SelectionBox.SurfaceColor3 = _G.ESP.Color
+	SelectionBox.Transparency = 0
+	SelectionBox.SurfaceTransparency = 1
+	SelectionBox.LineThickness = 0.05
+	SelectionBox.Parent = Folder
+	return SelectionBox
+end
+local function CreateHighlight(Bodypart)
+	local Highlight = Instance.new("Highlight")
+	Highlight.Adornee = Bodypart
+	Highlight.Name = Bodypart.Name.."-Highlight"
+	Highlight.FillColor = _G.ESP.Color
+	Highlight.FillTransparency = 0
+	Highlight.OutlineTransparency = 1
+	Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	Highlight.Parent = Folder
+	return Highlight
+end
+local function CreateESP(Character)
+	_G.ESP.Characters[GUIFC(Character)] = _G.ESP.Characters[GUIFC(Character)] or {}
+	if _G.ESP.Characters[GUIFC(Character)] and #_G.ESP.Characters[GUIFC(Character)] > 0 then
+		print("cached") -- adornee here to cached selection boxes and highlights
+		for _, v in ipairs(_G.ESP.Characters[GUIFC(Character)]) do
+			local Split = string.split(v.Name, "-")
+			local BodypartName = Split[1]
+			local Type = Split[2]
+			v.Adornee = Character:FindFirstChild(BodypartName) 
+		end
+		return;
+	end
+	for _, v in ipairs(Character:GetDescendants()) do
+		if v:IsA("Motor6D") then
+			if v.Part1 == nil then
+				continue;
+			end
+			local Bodypart = Character:FindFirstChild(v.Part1.Name) 
+			if Bodypart then
+				table.insert(_G.ESP.Characters[GUIFC(Character)], CreateSelectionBox(Bodypart))
+				table.insert(_G.ESP.Characters[GUIFC(Character)], CreateHighlight(Bodypart))
+			end
+		end
+	end
+	print(_G.ESP.Characters[Character])
+	-- // DEBUG LINE 
+	warn("ESP CREATED FOR "..tostring(Character.Name))
+end
+local function RemoveESP(Character, Permeanently)
+	if _G.ESP.Characters[GUIFC(Character)] == nil then
+		return;
+	end
+	for _, v in ipairs(_G.ESP.Characters[GUIFC(Character)]) do
+		if v == nil then
+			continue;
+		end
+		v.Adornee = nil
+		if Permeanently == true then
+			v:Destroy()
+		end
+	end
+	if Permeanently == true then
+		_G.ESP.Characters[GUIFC(Character)] = nil
+		print(_G.ESP.Characters)
+	end
+	-- // DEBUG LINE 
+	warn("ESP REMOVED FROM "..tostring(Character.Name))
+end
+for _, Player in ipairs(Players:GetPlayers()) do
+	if Player == nil then
+		continue;
+	end
+	if Player.UserId == Players.LocalPlayer.UserId then
+		continue;
+	end
+	Player.CharacterAdded:Connect(function(Character)
+		CreateESP(Character)
+	end)
+	Player.CharacterRemoving:Connect(function(Character)
+		RemoveESP(Character, false)
+		if Players:FindFirstChild(Player.Name) == nil then
+			RemoveESP(Character, true)
+		end
+	end)
+	if Player.Character == nil then
+		continue;
+	end
+	CreateESP(Player.Character)
+	if Player.Character:FindFirstChild("Humanoid") == nil then
+		continue;
+	end
+end
+Players.PlayerAdded:Connect(function(Player)
+	if Player == nil then
+		return;
+	end
+	if Player.UserId == Players.LocalPlayer.UserId then
+		return;
+	end
+	Player.CharacterAdded:Connect(function(Character)
+		CreateESP(Character)
+	end)
+	Player.CharacterRemoving:Connect(function(Character)
+		RemoveESP(Character, false)
+		if Players:FindFirstChild(Player.Name) == nil then
+			RemoveESP(Character, true)
+		end
+	end)
+	if Player.Character == nil then
+		return;
+	end
+	CreateESP(Player.Character)
+	if Player.Character:FindFirstChild("Humanoid") == nil then
+		return;
+	end
+end)
