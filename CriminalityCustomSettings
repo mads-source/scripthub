@@ -1,0 +1,82 @@
+local Settings = {
+	FOV = 120,
+	TransparencyModifier = 0.5,
+}
+local CameraObjects = {}
+local Workspace = game:GetService("Workspace")
+local Camera = Workspace.CurrentCamera
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local BindName = HttpService:GenerateGUID(false):gsub("-", "")
+local UserInputConnection
+local CameraDescendantAdded
+local CameraDescendantRemoving
+local LastFOV = Camera.FieldOfView
+local Enabled = false
+local function RefreshCameraObjects()
+	table.clear(CameraObjects)
+	for _, Object in ipairs(Camera:GetDescendants()) do
+		CameraObjects[#CameraObjects + 1] = Object
+	end
+end
+CameraDescendantAdded = Camera.DescendantAdded:Connect(RefreshCameraObjects)
+CameraDescendantRemoving = Camera.DescendantRemoving:Connect(RefreshCameraObjects)
+local function BindFunction()
+	if Camera.FieldOfView ~= Settings.FOV then
+		Camera.FieldOfView = Settings.FOV
+	end
+	for _, Object in ipairs(CameraObjects) do
+		if Object:IsA("BasePart") then
+			Object.LocalTransparencyModifier = Settings.TransparencyModifier
+		elseif Object:IsA("ParticleEmitter") then
+			Object:Clear()
+		elseif Object:IsA("Decal") then
+			Object.Transparency = Settings.TransparencyModifier
+ 		end
+	end
+end
+local function Enable()
+	if Enabled then
+		return
+	end
+	Enabled = true
+	LastFOV = Camera.FieldOfView
+	RunService:BindToRenderStep(BindName, 9999, BindFunction)
+	RefreshCameraObjects()
+end
+local function Disable()
+	if not Enabled then
+		return
+	end
+	Enabled = false
+	Camera.FieldOfView = LastFOV
+	RunService:UnbindFromRenderStep(BindName)
+end
+UserInputConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then
+		return
+	end
+	if input.KeyCode == Enum.KeyCode.Delete then
+		if Enabled then
+			Disable()
+		else
+			Enable()
+		end
+	end
+end)
+Players.PlayerRemoving:Connect(function(player)
+	if player == Players.LocalPlayer then
+		Disable()
+		if UserInputConnection then
+			UserInputConnection:Disconnect()
+		end
+		if CameraDescendantAdded then
+			CameraDescendantAdded:Disconnect()
+		end
+		if CameraDescendantRemoving then
+			CameraDescendantRemoving:Disconnect()
+		end
+	end
+end)
