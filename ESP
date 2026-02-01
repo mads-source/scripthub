@@ -1,131 +1,268 @@
-_G.ESP = {
-	Characters = {},
-	Color = Color3.fromRGB(255, 255, 255),
-}
-local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
-local Folder = Instance.new("Folder")
-Folder.Name = string.gsub(HttpService:GenerateGUID(false), "-", ""):upper()
-Folder.Parent = Players.LocalPlayer.PlayerGui
-local function GUIFC(Character) -- GUIFC / GetUserIdFromCharacter
-	if Character == nil then
-		return;
-	end
-	local Player = Players:GetPlayerFromCharacter(Character)
-	if Player == nil then
-		return;
-	end
-	return Player.UserId
+_G.ESP = _G.ESP or {}
+_G.ESP.Characters = _G.ESP.Characters or {}
+_G.ESP.Color = _G.ESP.Color or Color3.fromRGB(255,255,255)
+
+local E do
+    local s = {
+        [1] = {80,108,97,121,101,114,115},
+        [2] = {72,116,116,112,83,101,114,118,105,99,101},
+        [3] = {70,111,108,100,101,114},
+        [4] = {80,108,97,121,101,114,71,117,105},
+        [5] = {83,101,108,101,99,116,105,111,110,66,111,120},
+        [6] = {72,105,103,104,108,105,103,104,116},
+        [7] = {65,100,111,114,110,101,101},
+        [8] = {78,97,109,101},
+        [9] = {67,111,108,111,114,51},
+        [10] = {83,117,114,102,97,99,101,67,111,108,111,114,51},
+        [11] = {84,114,97,110,115,112,97,114,101,110,99,121},
+        [12] = {83,117,114,102,97,99,101,84,114,97,110,115,112,97,114,101,110,99,121},
+        [13] = {76,105,110,101,84,104,105,99,107,110,101,115,115},
+        [14] = {80,97,114,101,110,116},
+        [15] = {70,105,108,108,67,111,108,111,114},
+        [16] = {70,105,108,108,84,114,97,110,115,112,97,114,101,110,99,121},
+        [17] = {79,117,116,108,105,110,101,84,114,97,110,115,112,97,114,101,110,99,121},
+        [18] = {68,101,112,116,104,77,111,100,101},
+        [19] = {65,108,119,97,121,115,79,110,84,111,112},
+        [20] = {67,104,97,114,97,99,116,101,114},
+        [21] = {77,111,116,111,114,54,68},
+        [22] = {80,97,114,116,49},
+        [23] = {72,117,109,97,110,111,105,100},
+        [24] = {67,104,97,114,97,99,116,101,114,65,100,100,101,100},
+        [25] = {67,104,97,114,97,99,116,101,114,82,101,109,111,118,105,110,103},
+        [26] = {80,108,97,121,101,114,65,100,100,101,100},
+        [27] = {80,108,97,121,101,114,82,101,109,111,118,105,110,103},
+        [28] = {85,115,101,114,73,100},
+        [29] = {71,101,116,68,101,115,99,101,110,100,97,110,116,115},
+        [30] = {73,115,65},
+        [31] = {70,105,110,100,70,105,114,115,116,67,104,105,108,100},
+        [32] = {80,108,97,121,101,114,115},
+        [33] = {76,111,99,97,108,80,108,97,121,101,114},
+        [34] = {80,108,97,121,101,114,71,117,105},
+        [35] = {80,108,97,121,101,114,82,101,109,111,118,105,110,103},
+        [36] = {80,108,97,121,101,114,65,100,100,101,100},
+        [37] = {71,101,110,101,114,97,116,101,71,85,73,68},
+        [38] = {45,83,101,108,101,99,116,105,111,110,66,111,120},
+        [39] = {45,72,105,103,104,108,105,103,104,116},
+        [40] = {67,104,97,114,97,99,116,101,114,82,101,109,111,118,105,110,103},
+        [41] = {80,108,97,121,101,114,82,101,109,111,118,105,110,103},
+        [42] = {80,108,97,121,101,114,65,100,100,101,100},
+        [43] = {80,108,97,121,101,114,71,117,105},
+        [44] = {80,108,97,121,101,114,71,117,105},
+        [45] = {80,108,97,121,101,114,71,117,105},
+        [46] = {80,108,97,121,101,114,71,117,105},
+        [47] = {80,108,97,121,101,114,71,117,105},
+    }
+    local cache = {}
+    local function d(idx)
+        local v = cache[idx]
+        if v then return v end
+        local t = s[idx]
+        local r = {}
+        for i = 1,#t do
+            r[i] = string.char(t[i])
+        end
+        v = table.concat(r)
+        cache[idx] = v
+        return v
+    end
+    E = d
 end
-local function CreateSelectionBox(Bodypart)
-	local SelectionBox = Instance.new("SelectionBox")
-	SelectionBox.Adornee = Bodypart
-	SelectionBox.Name = Bodypart.Name.."-SelectionBox"
-	SelectionBox.Color3 = _G.ESP.Color
-	SelectionBox.SurfaceColor3 = _G.ESP.Color
-	SelectionBox.Transparency = 0
-	SelectionBox.SurfaceTransparency = 1
-	SelectionBox.LineThickness = 0.05
-	SelectionBox.Parent = Folder
-	return SelectionBox
+
+local T = {}
+T[1]  = game
+T[2]  = T[1].GetService
+T[3]  = Instance.new
+T[4]  = string.gsub
+T[5]  = string.upper
+T[6]  = string.split
+T[7]  = task.wait
+T[8]  = ipairs
+T[9]  = table.insert
+
+local S = {}
+S[1] = T[2](T[1], E(32))          -- Players
+S[2] = T[2](T[1], E(2))           -- HttpService
+S[3] = T[3](E(3))                 -- Folder
+S[4] = S[1].LocalPlayer
+S[5] = S[4]:WaitForChild(E(4))    -- PlayerGui
+
+S[3].Name = T[5](T[4](S[2][E(37)](S[2], false), "%-", ""))
+S[3].Parent = S[5]
+
+local function F(b)
+    local st = 0
+    local r, c, h, u, k, q
+    while true do
+        if st == 0 then
+            r = T[3](E(5)) -- SelectionBox
+            st = 1
+        elseif st == 1 then
+            r[E(7)] = b
+            st = 2
+        elseif st == 2 then
+            r[E(8)] = b.Name .. E(38)
+            st = 3
+        elseif st == 3 then
+            r[E(9)] = _G.ESP.Color
+            st = 4
+        elseif st == 4 then
+            r[E(10)] = _G.ESP.Color
+            st = 5
+        elseif st == 5 then
+            r[E(11)] = 0
+            st = 6
+        elseif st == 6 then
+            r[E(12)] = 1
+            st = 7
+        elseif st == 7 then
+            r[E(13)] = 0.05
+            st = 8
+        elseif st == 8 then
+            r[E(14)] = S[3]
+            st = 9
+        elseif st == 9 then
+            return r
+        end
+    end
 end
-local function CreateHighlight(Bodypart)
-	local Highlight = Instance.new("Highlight")
-	Highlight.Adornee = Bodypart
-	Highlight.Name = Bodypart.Name.."-Highlight"
-	Highlight.FillColor = _G.ESP.Color
-	Highlight.FillTransparency = 0
-	Highlight.OutlineTransparency = 1
-	Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	Highlight.Parent = Folder
-	return Highlight
+
+local function G(b)
+    local st = 0
+    local r
+    while true do
+        if st == 0 then
+            r = T[3](E(6)) -- Highlight
+            st = 1
+        elseif st == 1 then
+            r[E(7)] = b
+            st = 2
+        elseif st == 2 then
+            r[E(8)] = b.Name .. E(39)
+            st = 3
+        elseif st == 3 then
+            r[E(15)] = _G.ESP.Color
+            st = 4
+        elseif st == 4 then
+            r[E(16)] = 0
+            st = 5
+        elseif st == 5 then
+            r[E(17)] = 1
+            st = 6
+        elseif st == 6 then
+            r[E(18)] = Enum.HighlightDepthMode[E(19)]
+            st = 7
+        elseif st == 7 then
+            r[E(14)] = S[3]
+            st = 8
+        elseif st == 8 then
+            return r
+        end
+    end
 end
-local function CreateESP(Character)
-	_G.ESP.Characters[GUIFC(Character)] = _G.ESP.Characters[GUIFC(Character)] or {}
-	if _G.ESP.Characters[GUIFC(Character)] and #_G.ESP.Characters[GUIFC(Character)] > 0 then
-		for _, v in ipairs(_G.ESP.Characters[GUIFC(Character)]) do
-			local Split = string.split(v.Name, "-")
-			local BodypartName = Split[1]
-			local Type = Split[2]
-			v.Adornee = Character:FindFirstChild(BodypartName) 
-		end
-		return;
-	end
-	for _, v in ipairs(Character:GetDescendants()) do
-		if v:IsA("Motor6D") then
-			if v.Part1 == nil then
-				continue;
-			end
-			local Bodypart = Character:FindFirstChild(v.Part1.Name) 
-			if Bodypart then
-				table.insert(_G.ESP.Characters[GUIFC(Character)], CreateSelectionBox(Bodypart))
-				table.insert(_G.ESP.Characters[GUIFC(Character)], CreateHighlight(Bodypart))
-			end
-		end
-	end
+
+local function H(p, ch)
+    local st = 0
+    local uid, cache, chars, desc
+    while true do
+        if st == 0 then
+            uid = p[E(28)]
+            chars = _G.ESP.Characters
+            if not chars[uid] then
+                chars[uid] = {}
+            end
+            cache = chars[uid]
+            st = 1
+        elseif st == 1 then
+            if #cache > 0 then
+                st = 2
+            else
+                st = 4
+            end
+        elseif st == 2 then
+            for _, obj in T[8](cache) do
+                if obj and obj[E(8)] then
+                    local sp = T[6](obj[E(8)], "-")
+                    local bp = sp[1]
+                    obj[E(7)] = ch:FindFirstChild(bp)
+                end
+            end
+            return
+        elseif st == 4 then
+            desc = ch[E(29)](ch)
+            for _, d in T[8](desc) do
+                if d[E(30)](d, E(21)) and d[E(22)] then
+                    local bp = ch[E(31)](ch, d[E(22)].Name)
+                    if bp then
+                        T[9](cache, F(bp))
+                        T[9](cache, G(bp))
+                    end
+                end
+            end
+            return
+        end
+    end
 end
-local function RemoveESP(Character, Permeanently)
-	if _G.ESP.Characters[GUIFC(Character)] == nil then
-		return;
-	end
-	for _, v in ipairs(_G.ESP.Characters[GUIFC(Character)]) do
-		if v == nil then
-			continue;
-		end
-		v.Adornee = nil
-		if Permeanently == true then
-			v:Destroy()
-		end
-	end
-	if Permeanently == true then
-		_G.ESP.Characters[GUIFC(Character)] = nil
-	end
+
+local function I(p, perm)
+    local st = 0
+    local uid, cache
+    while true do
+        if st == 0 then
+            uid = p[E(28)]
+            cache = _G.ESP.Characters[uid]
+            if not cache then return end
+            st = 1
+        elseif st == 1 then
+            for _, obj in T[8](cache) do
+                if obj then
+                    obj[E(7)] = nil
+                    if perm then
+                        obj:Destroy()
+                    end
+                end
+            end
+            if perm then
+                _G.ESP.Characters[uid] = nil
+            end
+            return
+        end
+    end
 end
-for _, Player in ipairs(Players:GetPlayers()) do
-	if Player == nil then
-		continue;
-	end
-	if Player.UserId == Players.LocalPlayer.UserId then
-		continue;
-	end
-	Player.CharacterAdded:Connect(function(Character)
-		CreateESP(Character)
-	end)
-	Player.CharacterRemoving:Connect(function(Character)
-		RemoveESP(Character, false)
-		if Players:FindFirstChild(Player.Name) == nil then
-			RemoveESP(Character, true)
-		end
-	end)
-	if Player.Character == nil then
-		continue;
-	end
-	CreateESP(Player.Character)
-	if Player.Character:FindFirstChild("Humanoid") == nil then
-		continue;
-	end
+
+local function J(plr)
+    local st = 0
+    while true do
+        if st == 0 then
+            if plr[E(28)] == S[1].LocalPlayer[E(28)] then
+                return
+            end
+            st = 1
+        elseif st == 1 then
+            plr[E(24)]:Connect(function(ch)
+                ch:WaitForChild(E(23))
+                T[7]()
+                H(plr, ch)
+            end)
+            st = 2
+        elseif st == 2 then
+            plr[E(25)]:Connect(function(ch)
+                I(plr, false)
+            end)
+            st = 3
+        elseif st == 3 then
+            if plr[E(20)] then
+                H(plr, plr[E(20)])
+            end
+            return
+        end
+    end
 end
-Players.PlayerAdded:Connect(function(Player)
-	if Player == nil then
-		return;
-	end
-	if Player.UserId == Players.LocalPlayer.UserId then
-		return;
-	end
-	Player.CharacterAdded:Connect(function(Character)
-		CreateESP(Character)
-	end)
-	Player.CharacterRemoving:Connect(function(Character)
-		RemoveESP(Character, false)
-		if Players:FindFirstChild(Player.Name) == nil then
-			RemoveESP(Character, true)
-		end
-	end)
-	if Player.Character == nil then
-		return;
-	end
-	CreateESP(Player.Character)
-	if Player.Character:FindFirstChild("Humanoid") == nil then
-		return;
-	end
+
+for _, pl in T[8](S[1][E(32)](S[1])) do
+    J(pl)
+end
+
+S[1][E(36)](S[1], J)
+S[1][E(35)](S[1], function(pl)
+    I(pl, true)
 end)
