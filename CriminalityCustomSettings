@@ -1,5 +1,5 @@
 local Settings = {
-	FOV = 120,
+	FOV = 90,
 	TransparencyModifier = 0.5,
 }
 local CameraObjects = {}
