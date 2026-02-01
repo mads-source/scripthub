@@ -65,7 +65,7 @@ local function CreateNametag(Character, Player)
 	local Tag = Instance.new("BillboardGui")
 	Tag.Name = Player.Name.."_Nametag"
 	Tag.Adornee = Head
-	Tag.Size = UDim2.new(0, 12, 0, 4)
+	Tag.Size = UDim2.new(0, 80, 0, 30)
 	Tag.StudsOffset = Vector3.new(0, 2.5, 0)
 	Tag.AlwaysOnTop = true
 	Tag.Parent = Folder
