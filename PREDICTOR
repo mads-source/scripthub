@@ -129,6 +129,19 @@ local function UpdateMotion(player, dt)
 	state.confidence = confidence
 	Motion[player] = state
 end
+local function CleanupPlayer(plr)
+	local ghost = Ghosts[plr]
+	if ghost then
+		for _, limb in pairs(ghost) do
+			limb:Destroy()
+		end
+		Ghosts[plr] = nil
+	end
+	Motion[plr] = nil
+end
+Players.PlayerRemoving:Connect(function(plr)
+	CleanupPlayer(plr)
+end)
 RunService.RenderStepped:Connect(function(dt)
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr ~= LocalPlayer then
