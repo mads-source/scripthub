@@ -5,8 +5,8 @@ local LocalPlayer = Players.LocalPlayer
 local PredictionTime = 0.14
 local VelocitySmooth = 0.25
 local AccelSmooth = 0.15
-local BaseColor = Color3.fromRGB(80, 150, 255)
-local HighColor = Color3.fromRGB(0, 110, 255)
+local BaseColor = Color3.fromRGB(0, 0, 0)
+local HighColor = Color3.fromRGB(255, 255, 255)
 local Motion = {}
 local Ghosts = {}
 local function Lerp(a, b, t)
@@ -26,14 +26,23 @@ local function CreateR6Ghost()
 	local function make(size)
 		local p = Instance.new("Part")
 		p.Size = size
-		p.Material = Enum.Material.ForceField
-		p.Transparency = 0.45
+		p.Material = Enum.Material.Neon
+		p.Transparency = 0.8
 		p.Anchored = true
 		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
 		p.Parent = workspace
+		local s = Instance.new("SelectionBox")
+		s.Adornee = p
+		s.SurfaceTransparency = 1
+		s.Transparency = 0
+		s.LineThickness = 0.05
+		s.Parent = p
 		return p
 	end
-	ghost.Head = make(Vector3.new(2, 1, 1))
+	ghost.Head = make(Vector3.new(1, 1, 1))
 	ghost.Torso = make(Vector3.new(2, 2, 1))
 	ghost.LeftArm = make(Vector3.new(1, 2, 1))
 	ghost.RightArm = make(Vector3.new(1, 2, 1))
@@ -54,6 +63,7 @@ local function UpdateR6Ghost(ghost, pos, root, confidence)
 	local col = ConfidenceColor(confidence)
 	for _, limb in pairs(ghost) do
 		limb.Color = col
+		limb.SelectionBox.Color3 = col
 	end
 	ghost.Torso.CFrame = CFrame.new(pos) * rot
 	ghost.Head.CFrame = CFrame.new(pos) * rot * CFrame.new(0, 1.5, 0)
@@ -113,7 +123,7 @@ local function UpdateMotion(player, dt)
 	local predictedXZ = pos + horiz * t
 	local predicted = Vector3.new(predictedXZ.X, predictedY, predictedXZ.Z)
 	local dirStability = (pos - state.lastPos).Unit:Dot(state.vel.Unit)
-	local confidence = math.clamp((horiz.Magnitude / 40) * dirStability, 0, 1)
+	local confidence = math.clamp((horiz.Magnitude / 25) * dirStability, 0, 1)
 	state.lastPos = pos
 	state.predicted = predicted
 	state.confidence = confidence
