@@ -51,8 +51,13 @@ local function UpdateESPColor(Player, Humanoid)
 			Object.FillColor = Color
 		elseif Object:IsA("BillboardGui") then
 			local NameLabel = Object:FindFirstChild("Name")
+			local HPLabel = Object:FindFirstChild("HP")
 			if NameLabel then
 				NameLabel.TextColor3 = Color
+			end
+			if HPLabel then
+				HPLabel.TextColor3 = Color
+				HPLabel.Text = math.floor(Humanoid.Health) .. " HP"
 			end
 		end
 	end
@@ -65,7 +70,7 @@ local function CreateNametag(Character, Player)
 	local Tag = Instance.new("BillboardGui")
 	Tag.Name = Player.Name.."_Nametag"
 	Tag.Adornee = Head
-	Tag.Size = UDim2.new(0, 80, 0, 30)
+	Tag.Size = UDim2.new(0, 120, 0, 40)
 	Tag.StudsOffset = Vector3.new(0, 2.5, 0)
 	Tag.AlwaysOnTop = true
 	Tag.Parent = Folder
@@ -78,6 +83,17 @@ local function CreateNametag(Character, Player)
 	Label.TextScaled = true
 	Label.Font = Enum.Font.GothamBold
 	Label.Parent = Tag
+	local HPLabel = Instance.new("TextLabel")
+	HPLabel.Name = "HP"
+	HPLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	HPLabel.Position = UDim2.new(0, 0, 0.5, 0)
+	HPLabel.BackgroundTransparency = 1
+	HPLabel.Text = "100 HP"
+	HPLabel.TextColor3 = _G.ESP.Color
+	HPLabel.TextScaled = true
+	HPLabel.Font = Enum.Font.GothamSemibold
+	HPLabel.TextStrokeTransparency = 0.5
+	HPLabel.Parent = Tag
 	return Tag
 end
 local function CreateESP(Player, Character)
@@ -133,9 +149,9 @@ local function SetupPlayer(Player)
 		Character:WaitForChild("Humanoid")
 		task.wait()
 		CreateESP(Player, Character)
-		UpdateESPColor(Player, Character.Humanoid)
+		UpdateESPColor(Player, Character:FindFirstChild("Humanoid"))
 		Character.Humanoid.HealthChanged:Connect(function()
-			UpdateESPColor(Player, Character.Humanoid)
+			UpdateESPColor(Player, Character:FindFirstChild("Humanoid"))
 		end)
 	end)
 	Player.CharacterRemoving:Connect(function(Character)
