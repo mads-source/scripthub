@@ -1,0 +1,146 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+local PredictionTime = 0.14
+local VelocitySmooth = 0.25
+local AccelSmooth = 0.15
+local BaseColor = Color3.fromRGB(80, 150, 255)
+local HighColor = Color3.fromRGB(0, 110, 255)
+local Motion = {}
+local Ghosts = {}
+local function Lerp(a, b, t)
+	return a + (b - a) * t
+end
+local function SmoothVec(old, new, alpha)
+	return old:Lerp(new, alpha)
+end
+local function Flat(v)
+	return Vector3.new(v.X, 0, v.Z)
+end
+local function ConfidenceColor(conf)
+	return BaseColor:Lerp(HighColor, conf)
+end
+local function CreateR6Ghost()
+	local ghost = {}
+	local function make(size)
+		local p = Instance.new("Part")
+		p.Size = size
+		p.Material = Enum.Material.ForceField
+		p.Transparency = 0.45
+		p.Anchored = true
+		p.CanCollide = false
+		p.Parent = workspace
+		return p
+	end
+	ghost.Head = make(Vector3.new(2, 1, 1))
+	ghost.Torso = make(Vector3.new(2, 2, 1))
+	ghost.LeftArm = make(Vector3.new(1, 2, 1))
+	ghost.RightArm = make(Vector3.new(1, 2, 1))
+	ghost.LeftLeg = make(Vector3.new(1, 2, 1))
+	ghost.RightLeg = make(Vector3.new(1, 2, 1))
+	return ghost
+end
+local function GetFacingRotation(root)
+	local look = root.CFrame.LookVector
+	local flat = Vector3.new(look.X, 0, look.Z)
+	if flat.Magnitude < 0.1 then
+		return CFrame.new()
+	end
+	return CFrame.lookAt(Vector3.zero, flat.Unit)
+end
+local function UpdateR6Ghost(ghost, pos, root, confidence)
+	local rot = GetFacingRotation(root)
+	local col = ConfidenceColor(confidence)
+	for _, limb in pairs(ghost) do
+		limb.Color = col
+	end
+	ghost.Torso.CFrame = CFrame.new(pos) * rot
+	ghost.Head.CFrame = CFrame.new(pos) * rot * CFrame.new(0, 1.5, 0)
+	ghost.LeftArm.CFrame  = CFrame.new(pos) * rot * CFrame.new(-1.5, 0, 0)
+	ghost.RightArm.CFrame = CFrame.new(pos) * rot * CFrame.new(1.5, 0, 0)
+	ghost.LeftLeg.CFrame  = CFrame.new(pos) * rot * CFrame.new(-0.5, -2, 0)
+	ghost.RightLeg.CFrame = CFrame.new(pos) * rot * CFrame.new(0.5, -2, 0)
+end
+local lastTrail = 0
+local function TrailDot(pos, speed, confidence)
+	if tick() - lastTrail < 0.03 then return end
+	lastTrail = tick()
+	local size = math.clamp(speed / 20, 0.15, 0.6)
+	local col = ConfidenceColor(confidence)
+	local p = Instance.new("Part")
+	p.Size = Vector3.new(size, size, size)
+	p.Shape = Enum.PartType.Ball
+	p.Material = Enum.Material.Neon
+	p.Color = col
+	p.Anchored = true
+	p.CanCollide = false
+	p.Position = pos
+	p.Parent = workspace
+	task.spawn(function()
+		for i = 1, 20 do
+			p.Transparency = i / 20
+			task.wait(0.02)
+		end
+		p:Destroy()
+	end)
+end
+local function UpdateMotion(player, dt)
+	local char = player.Character
+	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not root or not hum then return end
+	local state = Motion[player] or {
+		lastPos = root.Position,
+		vel = Vector3.zero,
+		acc = Vector3.zero,
+	}
+	local pos = root.Position
+	local rawVel = root.AssemblyLinearVelocity
+	local rawAcc = (rawVel - state.vel) / dt
+	state.vel = SmoothVec(state.vel, rawVel, VelocitySmooth)
+	state.acc = SmoothVec(state.acc, rawAcc, AccelSmooth)
+	local t = PredictionTime
+	local gravity = workspace.Gravity
+	local predictedY
+	if hum.FloorMaterial == Enum.Material.Air then
+		predictedY = pos.Y + state.vel.Y * t + 0.5 * (-gravity) * (t ^ 2)
+	else
+		predictedY = pos.Y + state.vel.Y * t
+	end
+	local horiz = Flat(state.vel)
+	local predictedXZ = pos + horiz * t
+	local predicted = Vector3.new(predictedXZ.X, predictedY, predictedXZ.Z)
+	local dirStability = (pos - state.lastPos).Unit:Dot(state.vel.Unit)
+	local confidence = math.clamp((horiz.Magnitude / 40) * dirStability, 0, 1)
+	state.lastPos = pos
+	state.predicted = predicted
+	state.confidence = confidence
+	Motion[player] = state
+end
+RunService.RenderStepped:Connect(function(dt)
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= LocalPlayer then
+			local char = plr.Character
+			if not char then continue end
+			local root = char:FindFirstChild("HumanoidRootPart")
+			if not root then continue end
+			UpdateMotion(plr, dt)
+			local state = Motion[plr]
+			if not state then continue end
+			local predicted = state.predicted
+			local vel = state.vel
+			local conf = state.confidence
+			local ghost = Ghosts[plr]
+			if not ghost then
+				ghost = CreateR6Ghost()
+				Ghosts[plr] = ghost
+			end
+			UpdateR6Ghost(ghost, predicted, root, conf)
+			if vel.Magnitude > 2 then
+				TrailDot(predicted, vel.Magnitude, conf)
+			end
+		end
+	end
+end)
