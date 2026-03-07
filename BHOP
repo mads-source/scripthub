@@ -36,8 +36,6 @@ local movementPositionP
 local movementVelocityP
 local gravity
 
-
-
 function init(Player, Camera, Input)
 	player = Player
 	character = player.Character
