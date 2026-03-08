@@ -27,6 +27,9 @@ local posD, posP = 125, 14000
 local velP = 1500
 local gravity = 0.4
 
+local wasGrounded = false
+--local landingSound = collider:WaitForChild("LandingSound")
+
 -- body movers
 local movementPosition = Instance.new("BodyPosition", collider)
 movementPosition.D = posD
@@ -102,7 +105,16 @@ local function groundRay()
 		{character, camera}
 	)
 end
-
+local function createJumpSound(id, name)
+	local s = Instance.new("Sound")
+	s.Name = name
+	s.SoundId = "rbxassetid://"..tostring(id)
+	local distortionSoundEffect = Instance.new("DistortionSoundEffect")
+	distortionSoundEffect.Level = 0
+	distortionSoundEffect.Parent = s
+	s.Volume = 1
+	s.Parent = collider
+end
 ---------------------------------------------------------
 -- MOVEMENT
 ---------------------------------------------------------
@@ -152,6 +164,23 @@ local function updateLoop()
 
 	local part, pos = groundRay()
 	local grounded = part ~= nil
+	
+	if grounded and not wasGrounded then
+		local fallSpeed = math.abs(collider.Velocity.Y)
+
+		if fallSpeed > 100 then
+			local landsound = collider["land"..tostring(math.random(1, 4))]
+			landsound.DistortionSoundEffect.Level = math.clamp((fallSpeed / 100) / 10, 0, 1)
+			landsound:Play()
+		else
+			local jumplandsound = collider["jumpland"..tostring(math.random(1, 4))]
+			jumplandsound.DistortionSoundEffect.Level = math.clamp((fallSpeed / 100) / 10, 0, 1)
+			jumplandsound:Play()
+		end
+		
+	end
+
+	wasGrounded = grounded
 
 	if grounded and input.Space then
 		jump()
@@ -167,4 +196,20 @@ end
 -- MAIN
 ---------------------------------------------------------
 character:WaitForChild("Humanoid").PlatformStand = true
+
+for _, obj in ipairs(character:GetDescendants()) do
+	if obj:IsA("Sound") then
+		obj:Destroy()
+	end
+end
+
+createJumpSound(139463276206482, "land1")
+createJumpSound(94241406874574, "land2")
+createJumpSound(114569164654068, "land3")
+createJumpSound(107166483543973, "land4")
+createJumpSound(103626748100795, "jumpland1")
+createJumpSound(70832647725823, "jumpland2")
+createJumpSound(126881272438102, "jumpland3")
+createJumpSound(132019568591237, "jumpland4")
+
 RS:BindToRenderStep("updateLoop", 1, updateLoop)
