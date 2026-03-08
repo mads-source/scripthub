@@ -168,14 +168,16 @@ local function updateLoop()
 	if grounded and not wasGrounded then
 		local fallSpeed = math.abs(collider.Velocity.Y)
 
-		if fallSpeed > 100 then
-			local landsound = collider["land"..tostring(math.random(1, 4))]
-			landsound.DistortionSoundEffect.Level = math.clamp((fallSpeed / 100) / 10, 0, 1)
-			landsound:Play()
-		else
-			local jumplandsound = collider["jumpland"..tostring(math.random(1, 4))]
-			jumplandsound.DistortionSoundEffect.Level = math.clamp((fallSpeed / 100) / 10, 0, 1)
-			jumplandsound:Play()
+		if fallSpeed > torsoToGround then
+		    if fallSpeed > 100 then
+			   local landsound = collider["land"..tostring(math.random(1, 4))]
+			   landsound.DistortionSoundEffect.Level = math.clamp((fallSpeed / 100) / 10, 0, 1)
+			   landsound:Play()
+	  	   else
+			   local jumplandsound = collider["jumpland"..tostring(math.random(1, 4))]
+		       jumplandsound.DistortionSoundEffect.Level = math.clamp((fallSpeed / 100) / 10, 0, 1)
+			   jumplandsound:Play()
+		    end
 		end
 		
 	end
