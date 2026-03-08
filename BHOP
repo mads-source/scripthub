@@ -305,36 +305,36 @@ function onInput(input, gameProcessedEvent)
 		inputKeys.RMB = inputState
 	end
 end
-function main()
-	local a = plr.Character:FindFirstChildOfClass("Humanoid") or plr.Character:WaitForChild("Humanoid");
-	a.PlatformStand = true
-	--init movement
-	init(plr, camera, inputKeys);
-	initBodyMovers();
-		
-	--connect input
-	UserInputService.InputBegan:connect(onInput);
-	UserInputService.InputEnded:connect(onInput);
-	--connect updateloop
-	game:GetService("RunService"):BindToRenderStep("updateLoop", 1, updateLoop);
-	
-	--rip
-end
 
 local prevUpdateTime = nil
 local updateDT = 1/60
 
-function setDeltaTime() --seconds
-	local UpdateTime = tick() 
-	if prevUpdateTime ~= nil then
-		updateDT = (UpdateTime - prevUpdateTime)
-	else
-		updateDT = 1/60
-	end
-	prevUpdateTime = UpdateTime
+function setDeltaTime()
+    local UpdateTime = tick()
+    if prevUpdateTime ~= nil then
+        updateDT = (UpdateTime - prevUpdateTime)
+    else
+        updateDT = 1/60
+    end
+    prevUpdateTime = UpdateTime
 end
+
 function updateLoop()
-	setDeltaTime();
-	update(updateDT);
+    setDeltaTime()
+    update(updateDT)
 end
+
+function main()
+    local a = plr.Character:FindFirstChildOfClass("Humanoid") or plr.Character:WaitForChild("Humanoid")
+    a.PlatformStand = true
+
+    init(plr, camera, inputKeys)
+    initBodyMovers()
+
+    UserInputService.InputBegan:Connect(onInput)
+    UserInputService.InputEnded:Connect(onInput)
+
+    game:GetService("RunService"):BindToRenderStep("updateLoop", 1, updateLoop)
+end
+
 main()
