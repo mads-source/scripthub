@@ -1,153 +1,170 @@
--- bhop by pdnghiaqoi (shortened)
+-- bhop by pdnghiaqoi (shortened, same behavior)
 
-local plr = game.Players.LocalPlayer
-local cam = workspace.CurrentCamera
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local collider = character:WaitForChild("HumanoidRootPart")
+local camera = workspace.CurrentCamera
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
 
-local char, root, movePos, moveVel, gravForce
-local dt, last = 1/60, tick()
+local input = {W=false,S=false,A=false,D=false,Space=false,LMB=false,RMB=false}
 
-local keys = {W=false,S=false,A=false,D=false,Space=false}
+local dt = 1/60
+local prevTime = tick()
 
--- SETTINGS
-local airA, airMax = 10000, 2.4
-local groundA, groundMax = 250, 20
+-- movement settings
+local airAccelerate, airMaxSpeed = 10000, 2.4
+local groundAccelerate, groundMaxVelocity = 250, 20
 local friction = 5
-local jumpV = 60
-local torsoOffset = 3
-local stickDist = 0.5
-local rayLen = torsoOffset + stickDist
+local torsoToGround = 3
+local stickDistance = 0.5
+local jumpVelocity = 60
 local posForce = 400000
 local velForce = 300000
+local maxPitch = 0.6
+local rayLen = torsoToGround + stickDistance
+local posD, posP = 125, 14000
 local velP = 1500
 local gravity = 0.4
 
------------------------------------------------------
+-- body movers
+local movementPosition = Instance.new("BodyPosition", collider)
+movementPosition.D = posD
+movementPosition.P = posP
+
+local movementVelocity = Instance.new("BodyVelocity", collider)
+movementVelocity.P = velP
+
+local gravityForce = Instance.new("BodyForce", collider)
+gravityForce.Force = Vector3.new(0,(1-gravity)*196.2,0) * collider:GetMass()
+
+---------------------------------------------------------
 -- INPUT
------------------------------------------------------
+---------------------------------------------------------
 UIS.InputBegan:Connect(function(i,gp)
 	if gp then return end
 	if i.UserInputType == Enum.UserInputType.Keyboard then
 		local k = i.KeyCode.Name
-		if keys[k] ~= nil then keys[k] = true end
+		if input[k] ~= nil then input[k] = true end
+	elseif i.UserInputType == Enum.UserInputType.MouseButton1 then
+		input.LMB = true
+	elseif i.UserInputType == Enum.UserInputType.MouseButton2 then
+		input.RMB = true
 	end
 end)
 
 UIS.InputEnded:Connect(function(i)
 	if i.UserInputType == Enum.UserInputType.Keyboard then
 		local k = i.KeyCode.Name
-		if keys[k] ~= nil then keys[k] = false end
+		if input[k] ~= nil then input[k] = false end
+	elseif i.UserInputType == Enum.UserInputType.MouseButton1 then
+		input.LMB = false
+	elseif i.UserInputType == Enum.UserInputType.MouseButton2 then
+		input.RMB = false
 	end
 end)
 
------------------------------------------------------
+---------------------------------------------------------
 -- HELPERS
------------------------------------------------------
-local function getDT()
+---------------------------------------------------------
+local function updateDT()
 	local now = tick()
-	dt = now - last
-	last = now
+	dt = now - prevTime
+	prevTime = now
 end
 
-local function yawCF()
-	local pitch = math.pi/2 - math.acos(cam.CFrame.LookVector:Dot(Vector3.new(0,1,0)))
-	return cam.CFrame * CFrame.Angles(-pitch,0,0)
+local function getYaw()
+	local pitch = math.pi/2 - math.acos(camera.CFrame.LookVector:Dot(Vector3.new(0,1,0)))
+	return camera.CFrame * CFrame.Angles(-pitch,0,0)
 end
 
-local function moveDir(yaw, look)
-	local f = look * ((keys.W and 1 or 0) - (keys.S and 1 or 0))
-	local s = (yaw * CFrame.Angles(0,math.rad(90),0)).LookVector * ((keys.A and 1 or 0) - (keys.D and 1 or 0))
-	local d = f + s
-	return d.Magnitude > 0 and d.Unit or Vector3.zero
+local function getMoveInput()
+	local f = (input.W and 1 or 0) - (input.S and 1 or 0)
+	local s = (input.A and 1 or 0) - (input.D and 1 or 0)
+	return f, s
 end
 
-local function accelVel(prev, accel, max, dir)
+local function getMovementVelocity(prev, accel, maxVel, look, yaw)
+	local f, s = getMoveInput()
+	local dir = (look * f + (yaw * CFrame.Angles(0,math.rad(90),0)).LookVector * s)
+	dir = dir.Magnitude > 0 and dir.Unit or Vector3.zero
+
 	local proj = prev:Dot(dir)
 	local add = accel * dt
-	if proj + add > max then add = math.max(max - proj, 0) end
+	if proj + add > maxVel then add = math.max(maxVel - proj, 0) end
+
 	return prev + dir * add
 end
 
 local function groundRay()
 	return workspace:FindPartOnRayWithIgnoreList(
-		Ray.new(root.Position, Vector3.new(0,-rayLen,0)),
-		{char, cam}
+		Ray.new(collider.Position, Vector3.new(0,-rayLen,0)),
+		{character, camera}
 	)
 end
 
------------------------------------------------------
+---------------------------------------------------------
 -- MOVEMENT
------------------------------------------------------
-local function doAir(dir)
-	movePos.MaxForce = Vector3.zero
-	moveVel.Velocity = accelVel(root.Velocity, airA, airMax, dir)
-	moveVel.MaxForce = Vector3.new(velForce,0,velForce)
+---------------------------------------------------------
+local function jump()
+	collider.Velocity = Vector3.new(collider.Velocity.X, jumpVelocity, collider.Velocity.Z)
 end
 
-local function doGround(hitPos, dir)
-	local vel = root.Velocity
-	local spd = vel.Magnitude
+local function air(look, yaw)
+	movementPosition.MaxForce = Vector3.zero
+	movementVelocity.Velocity = getMovementVelocity(collider.Velocity, airAccelerate, airMaxSpeed, look, yaw)
+	movementVelocity.MaxForce = Vector3.new(velForce,0,velForce)
+end
 
-	if spd > 0 then
-		local drop = spd * friction * dt
-		vel = vel * math.max(spd - drop, 0) / spd
+local function run(hitPos, look, yaw)
+	local vel = collider.Velocity
+	local speed = vel.Magnitude
+
+	if speed > 0 then
+		local drop = speed * friction * dt
+		vel = vel * math.max(speed - drop, 0) / speed
 	end
 
-	movePos.Position = hitPos + Vector3.new(0, torsoOffset, 0)
-	movePos.MaxForce = Vector3.new(0, posForce, 0)
+	movementPosition.Position = hitPos + Vector3.new(0,torsoToGround,0)
+	movementPosition.MaxForce = Vector3.new(0,posForce,0)
 
-	moveVel.Velocity = accelVel(vel, groundA, groundMax, dir)
-	moveVel.MaxForce = Vector3.new(velForce,0,velForce)
-	moveVel.P = velP
+	movementVelocity.Velocity = getMovementVelocity(vel, groundAccelerate, groundMaxVelocity, look, yaw)
+	movementVelocity.MaxForce = Vector3.new(velForce,0,velForce)
 end
 
-local function doJump(dir)
-	root.Velocity = Vector3.new(root.Velocity.X, jumpV, root.Velocity.Z)
-	doAir(dir)
+local function setCharacterRotation()
+	local look = camera.CFrame.LookVector
+	local pos = collider.Position
+	collider.CFrame = CFrame.new(pos, Vector3.new(pos.X + look.X, pos.Y, pos.Z + look.Z))
+	collider.RotVelocity = Vector3.zero
 end
 
------------------------------------------------------
+---------------------------------------------------------
 -- UPDATE LOOP
------------------------------------------------------
-local function update()
-	getDT()
+---------------------------------------------------------
+local function updateLoop()
+	updateDT()
 
-	local yaw = yawCF()
+	local yaw = getYaw()
 	local look = yaw.LookVector
-	local dir = moveDir(yaw, look)
+
+	setCharacterRotation()
 
 	local part, pos = groundRay()
 	local grounded = part ~= nil
 
-	if grounded and keys.Space then
-		doJump(dir)
+	if grounded and input.Space then
+		jump()
+		air(look, yaw)
 	elseif grounded then
-		doGround(pos, dir)
+		run(pos, look, yaw)
 	else
-		doAir(dir)
+		air(look, yaw)
 	end
 end
 
------------------------------------------------------
--- INIT
------------------------------------------------------
-local function init()
-	char = plr.Character or plr.CharacterAdded:Wait()
-	root = char:WaitForChild("HumanoidRootPart")
-
-	char:WaitForChild("Humanoid").PlatformStand = true
-
-	movePos = Instance.new("BodyPosition", root)
-	movePos.MaxForce = Vector3.zero
-
-	moveVel = Instance.new("BodyVelocity", root)
-	moveVel.MaxForce = Vector3.zero
-
-	gravForce = Instance.new("BodyForce", root)
-	gravForce.Force = Vector3.new(0,(1-gravity)*196.2,0) * root:GetMass()
-
-	RS:BindToRenderStep("bhopUpdate", 1, update)
-end
-
-init()
+---------------------------------------------------------
+-- MAIN
+---------------------------------------------------------
+character:WaitForChild("Humanoid").PlatformStand = true
+RS:BindToRenderStep("updateLoop", 1, updateLoop)
